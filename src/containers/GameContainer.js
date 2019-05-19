@@ -79,13 +79,14 @@ class GameContainer extends Component {
         
     }
 
-    matchWinnerPromise = () => {
+    matchWinnerPromise = (i) => {
         return new Promise((resolve, reject) => {
-
+            var randomRelay = Math.floor(Math.random() * 5000);
             window.setTimeout(() => {
                 var randomIndex = Math.floor(Math.random()*2);
-                resolve(randomIndex);
-            }, 4000);
+                
+                resolve({randomIndex, i});
+            }, 500 + randomRelay);
         });
     }
 
@@ -98,7 +99,16 @@ class GameContainer extends Component {
             } else if (matchArr[i].element2[0] === "dummy") {
                 winner = 0;
             } else {
-                winner = this.matchWinnerPromise();
+                winner = this.matchWinnerPromise(i);
+                winner.then((data) => {
+                    var elem = this.state.matchArr[data.i];
+                    elem.winner = data.randomIndex === 1 ? 1 : 0
+                    var tempArr = [...this.state.matchArr];
+                    tempArr[data.i] =  elem;
+                    this.setState({
+                        matchArr : tempArr
+                    });
+                });
             }
             promiseArray.push(winner);
         }
@@ -107,16 +117,18 @@ class GameContainer extends Component {
             console.log(data);
             var newPlayersArray = [];
             for(var i = 0; i < matchArr.length ; i++) {
-                if (data[i] ===0) {
+                var comp = data[i].i ? data[i].i : data[i];
+                if (comp ===0) {
                     newPlayersArray.push(matchArr[i].element1[0]);
                 } else {
                     newPlayersArray.push(matchArr[i].element2[0]);
                 }
             }
+            this.playing = false;
             this.setState({
                 info : newPlayersArray
             })
-            this.playing = false;
+            
             if (this.state.info.length !== 1) {
                 this.randomlyPair();
             }
@@ -152,17 +164,33 @@ class GameContainer extends Component {
         </div>) : null
     }
 
+    getDetail = (match) => {
+        if (match.winner) {
+            if (match.winner === 1) {
+                return match.element2[0].simpleName ? match.element2[0].simpleName : "dummyBye";
+            } else {
+                return match.element1[0].simpleName ? match.element1[0].simpleName : "dummyBye";
+            }
+        }
+        
+    }
+
+    getDetail2 = (match) => {
+        var a = match.element1[0].simpleName ? match.element1[0].simpleName : "dummyBye";
+        var b = match.element2[0].simpleName ? match.element2[0].simpleName : "dummyBye";
+        var c = a + " Vs " + b;
+        return c;
+    }
+
     renderMatch = () => {
         let style = {
             width: '200px',
-            margin: '10px 5px 0px 5px'
+            margin: '10px 5px 10px 5px'
         };
         return this.state.matchArr ? this.state.matchArr.map((match, key) => <div
             key={key}
             style={style}>
-            {match.element1[0].simpleName ? match.element1[0].simpleName : "dummyBye"} 
-            Vs
-            {match.element2[0].simpleName ? match.element2[0].simpleName : "dummyBye"} 
+            {match.winner ? this.getDetail(match): this.getDetail2(match)}
         </div>) : null
     }
 
